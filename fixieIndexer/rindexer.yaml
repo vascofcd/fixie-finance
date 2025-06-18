@@ -13,14 +13,13 @@ storage:
 native_transfers:
   enabled: false
 contracts:
-  # Name of the contract
-  - name: RocketPoolETH
+  - name: RateSwap
     details:
       - network: anvil
-        address: 0xae78736cd615f374d3085123a210448e74fc6393
+        address: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
         start_block: "0"
-    # Get the abi, /out in foundry and copy to abis in fixieIndexer
-    abi: ./abis/RocketTokenRETH.abi.json
+    abi: ./abis/RateSwap.abi.json
     include_events:
-      - Transfer
-      - Approval
+      - SwapCreated
+      - FloatingRateRecorded
+      - SwapSettled
