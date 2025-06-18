@@ -1,0 +1,26 @@
+name: fixieIndexer
+project_type: no-code
+networks:
+  - name: anvil
+    chain_id: 31337
+    rpc: http://127.0.0.1:8545
+storage:
+  postgres:
+    enabled: true
+  csv:
+    enabled: true
+    path: ./generated_csv
+native_transfers:
+  enabled: false
+contracts:
+  # Name of the contract
+  - name: RocketPoolETH
+    details:
+      - network: anvil
+        address: 0xae78736cd615f374d3085123a210448e74fc6393
+        start_block: "0"
+    # Get the abi, /out in foundry and copy to abis in fixieIndexer
+    abi: ./abis/RocketTokenRETH.abi.json
+    include_events:
+      - Transfer
+      - Approval
