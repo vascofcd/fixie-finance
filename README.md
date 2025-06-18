@@ -42,9 +42,6 @@ Fixie allows two users to enter a **simple on-chain interest rate swap**:
 | 🟢 Chainlink Price Feeds | Fetch real-time lending rates (e.g., Aave)    |
 | 🟢 Chainlink Automation  | Trigger periodic rate recording & settlement  |
 
-✅ **Meets the Chainlink requirement for on-chain state changes.**  
-Bonus points earned for using **multiple Chainlink services**.
-
 ---
 
 ## 🧠 How It Works
