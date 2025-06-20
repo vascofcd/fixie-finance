@@ -6,13 +6,13 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRateSwap} from "./interfaces/IRateSwap.sol";
 
 contract RateSwap is IRateSwap, AutomationCompatible {
-    uint256 public constant COLLATERAL_MULTIPLIER = 1.2e18; // 120% collateralization
+    uint256 public constant COLLATERAL_MULTIPLIER = 1_200_000; // 120% collateralization
     uint256 public constant SECONDS_PER_YEAR = 31536000;
-    uint256 public constant PRECISION = 1e6;
+    uint256 public constant PRECISION = 1_000_000;
 
     mapping(uint256 => InterestRateSwap) public swaps;
     mapping(uint256 => uint256) public settlementTimes;
-    uint256 public nextSwapId = 1;
+    uint256 public nextSwapId;
 
     function createSwap(uint256 notional, uint256 fixedRate, uint256 term, address asset)
         external
@@ -20,9 +20,7 @@ contract RateSwap is IRateSwap, AutomationCompatible {
     {
         swapId = nextSwapId++;
 
-        uint256 collateral = (notional * fixedRate * COLLATERAL_MULTIPLIER) / PRECISION;
-
-        IERC20(asset).transferFrom(msg.sender, address(this), collateral);
+        IERC20(asset).transferFrom(msg.sender, address(this), notional);
 
         swaps[swapId] = InterestRateSwap({
             fixedPayer: msg.sender,
@@ -32,7 +30,7 @@ contract RateSwap is IRateSwap, AutomationCompatible {
             startTimestamp: block.timestamp,
             term: term,
             asset: asset,
-            fixedCollateral: collateral,
+            fixedCollateral: 0,
             floatingCollateral: 0,
             status: RateSwapStatus.OPEN
         });
@@ -48,11 +46,9 @@ contract RateSwap is IRateSwap, AutomationCompatible {
         require(swap.status == RateSwapStatus.OPEN, "Swap not open");
         require(swap.floatingPayer == address(0), "Already accepted");
 
-        uint256 collateral = (swap.notional * swap.fixedRate * COLLATERAL_MULTIPLIER) / PRECISION;
-        IERC20(swap.asset).transferFrom(msg.sender, address(this), collateral);
+        IERC20(swap.asset).transferFrom(msg.sender, address(this), swap.notional);
 
         swap.floatingPayer = msg.sender;
-        swap.floatingCollateral = collateral;
         swap.status = RateSwapStatus.ACTIVE;
 
         emit SwapAccepted(swapId, msg.sender);
