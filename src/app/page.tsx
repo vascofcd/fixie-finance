@@ -1,13 +1,15 @@
 "use client";
 
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { Header } from "@/components/layout/Header";
 import DashboardPage from "./dashboard";
 
 export default function Home() {
   return (
     <div>
+      <header>
+        <Header />
+      </header>
       <main>
-        <ConnectButton />
         <DashboardPage />
       </main>
       <footer>This is a footer</footer>
