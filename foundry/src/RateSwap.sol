@@ -1,114 +1,66 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-contract RateSwap {
-    event SwapCreated(uint256 indexed swapId, address indexed fixedPayer, address indexed floatingPayer);
-    event FloatingRateRecorded(uint256 indexed swapId, uint256 rateBps, uint256 timestamp);
-    event SwapSettled(uint256 indexed swapId, address winner, uint256 interestDelta);
+import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IRateSwap} from "./interfaces/IRateSwap.sol";
 
-    ///@dev Interest rate swap
-    struct InterestRateSwap {
-        address fixedPayer;
-        address floatingPayer;
-        uint256 notional;
-        uint256 fixedRate;
-        uint256 startTimestamp;
-        uint256 endTimestamp;
-        uint256 duration;
-        RateRecord[] recordedFloatingRates;
-        bool settled;
-    }
+contract RateSwap is IRateSwap, AutomationCompatible {
+    uint256 public constant COLLATERAL_MULTIPLIER = 1.2e18; // 120% collateralization
+    uint256 public constant SECONDS_PER_YEAR = 31536000;
+    uint256 public constant PRECISION = 1e6;
 
-    ///@dev Rate record
-    struct RateRecord {
-        uint256 timestamp;
-        uint256 rateBps;
-    }
-
-    ///@dev Swap Id
-    uint256 public nextSwapId;
-
-    ///@dev Swap ledger
     mapping(uint256 => InterestRateSwap) public swaps;
+    mapping(uint256 => uint256) public settlementTimes;
+    uint256 public nextSwapId = 1;
 
-    /**
-     * @dev Create swap
-     */
-    function createSwap(
-        address _counterparty,
-        uint256 _notional,
-        uint256 _fixedRate, // in bps
-        uint256 _duration // in days
-    ) external {
-        require(_notional > 0, "Invalid notional amount");
+    function createSwap(uint256 notional, uint256 fixedRate, uint256 term, address asset)
+        external
+        returns (uint256 swapId)
+    {
+        swapId = nextSwapId++;
 
-        //@todo check end calculation
-        uint256 end = block.timestamp + (_duration * 1 days);
+        uint256 collateral = (notional * fixedRate * COLLATERAL_MULTIPLIER) / PRECISION;
 
-        InterestRateSwap storage newSwap = swaps[nextSwapId];
-        newSwap.fixedPayer = msg.sender;
-        newSwap.floatingPayer = _counterparty;
-        newSwap.notional = _notional;
-        newSwap.fixedRate = _fixedRate;
-        newSwap.startTimestamp = block.timestamp;
-        newSwap.endTimestamp = end;
-        newSwap.duration = _duration;
-        newSwap.settled = false;
+        IERC20(asset).transferFrom(msg.sender, address(this), collateral);
 
-        emit SwapCreated(nextSwapId, msg.sender, _counterparty);
-        nextSwapId++;
+        swaps[swapId] = InterestRateSwap({
+            fixedPayer: msg.sender,
+            floatingPayer: address(0),
+            notional: notional,
+            fixedRate: fixedRate,
+            startTimestamp: block.timestamp,
+            term: term,
+            asset: asset,
+            fixedCollateral: collateral,
+            floatingCollateral: 0,
+            status: RateSwapStatus.OPEN
+        });
+
+        settlementTimes[swapId] = block.timestamp + term;
+
+        emit SwapCreated(swapId, msg.sender, notional);
     }
 
-    /**
-     * @dev Record floating rates
-     */
-    function recordFloatingRate(uint256 swapId, uint256 rateBps) external {
+    ///@dev Anyone can accept an OPEN swap
+    function acceptSwap(uint256 swapId) external {
         InterestRateSwap storage swap = swaps[swapId];
-        require(block.timestamp < swap.endTimestamp, "Swap expired");
-        require(!swap.settled, "Already settled");
+        require(swap.status == RateSwapStatus.OPEN, "Swap not open");
+        require(swap.floatingPayer == address(0), "Already accepted");
 
-        swap.recordedFloatingRates.push(RateRecord({timestamp: block.timestamp, rateBps: rateBps}));
+        uint256 collateral = (swap.notional * swap.fixedRate * COLLATERAL_MULTIPLIER) / PRECISION;
+        IERC20(swap.asset).transferFrom(msg.sender, address(this), collateral);
 
-        emit FloatingRateRecorded(swapId, rateBps, block.timestamp);
+        swap.floatingPayer = msg.sender;
+        swap.floatingCollateral = collateral;
+        swap.status = RateSwapStatus.ACTIVE;
+
+        emit SwapAccepted(swapId, msg.sender);
     }
 
-    /**
-     * @dev Settles a swap
-     */
-    function settleSwap(uint256 swapId) external {
-        InterestRateSwap storage swap = swaps[swapId];
-        require(block.timestamp >= swap.endTimestamp, "Too early");
-        require(!swap.settled, "Already settled");
+    function settleSwap(uint256 swapId) external {}
 
-        uint256 fixedInterest = (swap.notional * swap.fixedRate * swap.duration) / (36500 * 1e2); // APY to daily interest in USDC (6 decimals)
+    function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {}
 
-        RateRecord[] storage records = swap.recordedFloatingRates;
-        require(records.length > 0, "No floating rates recorded");
-
-        uint256 total;
-        for (uint256 i = 0; i < records.length; i++) {
-            total += records[i].rateBps;
-        }
-
-        uint256 avgFloatingRate = total / records.length;
-        uint256 floatingInterest = (swap.notional * avgFloatingRate * swap.duration) / (36500 * 1e2);
-
-        address winner;
-        address loser;
-        uint256 diff;
-
-        if (floatingInterest > fixedInterest) {
-            diff = floatingInterest - fixedInterest;
-            winner = swap.floatingPayer;
-            loser = swap.fixedPayer;
-        } else {
-            diff = fixedInterest - floatingInterest;
-            winner = swap.fixedPayer;
-            loser = swap.floatingPayer;
-        }
-
-        swap.settled = true;
-
-        emit SwapSettled(swapId, winner, diff);
-    }
+    function performUpkeep(bytes calldata performData) external {}
 }

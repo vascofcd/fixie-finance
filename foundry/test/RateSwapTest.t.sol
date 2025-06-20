@@ -9,11 +9,12 @@ contract RateSwapTest is Test {
 
     function setUp() public {
         rateSwap = new RateSwap();
-        rateSwap.createSwap(address(0x1234567890123456789012345678901234567890), 1000000, 500, 30);
-        rateSwap.createSwap(address(0x0987654321098765432109876543210987654321), 2000000, 300, 60);
-        rateSwap.createSwap(address(0x1122334455667788990011223344556677889900), 1500000, 400, 90);
-        rateSwap.createSwap(address(0xAAbbCCDdeEFf00112233445566778899aABBcCDd), 500000, 600, 120);
-        rateSwap.createSwap(address(0xFFEEDDCCbBaa99887766554433221100fFeedDcC), 750000, 700, 150);
+        rateSwap.createSwap(
+            1000e18, // Notional
+            50000, // Fixed rate (5%)
+            365 days, // Term (1 year)
+            address(0) // Asset (mocked)
+        );
     }
 
     function test_SwapCreation() public view {
