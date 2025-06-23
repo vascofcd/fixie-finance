@@ -23,6 +23,7 @@ import {
 
 export const Header = () => {
   const pathname = usePathname();
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [walletConnected, setWalletConnected] = useState(false);
 
@@ -36,10 +37,6 @@ export const Header = () => {
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
-  };
-
-  const handleConnectWallet = () => {
-    setWalletConnected(!walletConnected);
   };
 
   const drawer = (

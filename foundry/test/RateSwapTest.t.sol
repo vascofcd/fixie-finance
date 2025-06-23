@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
@@ -12,29 +12,30 @@ contract RateSwapTest is Test {
     address public alice = address(0x1);
     address public bob = address(0x2);
 
-    function setUp() public {
-        // ** Deploy contracts ** //
-        rateSwap = new RateSwap();
-        asset = new ERC20Mock("Ethereum", "ETH");
+    uint256 public constant NOTIONAL_AMOUNT = 1e17;
+    uint256 public constant FIXED_RATE = 50000; // 5%
+    uint256 public constant TENOR = 180 days;
 
-        // ** Users ** //
+    function setUp() public {
+        rateSwap = new RateSwap();
+        asset = new ERC20Mock("Thether", "USDT");
+
         setMintAndApprove(alice, address(rateSwap));
         setMintAndApprove(bob, address(rateSwap));
-
-        // ** Create a swap ** //
-        vm.prank(alice);
-        rateSwap.createSwap(1e17, 50000, 365 days, address(asset));
-
-        // ** Accept the swap ** //
-        vm.startPrank(bob);
-        rateSwap.acceptSwap(0);
-        vm.stopPrank();
     }
 
-    function test_createSwap() public view {
-        assertEq(rateSwap.nextSwapId(), 1);
-        assertEq(rateSwap.settlementTimes(0), block.timestamp + 365 days);
-        assertEq(asset.balanceOf(address(rateSwap)), 1e17 + 1e17); // Alice's notional + Bob's collateral
+    function test_createSwap() public {
+        // ** CREATE SWAP ** //
+        vm.prank(alice);
+        uint256 swapCreatedId = rateSwap.createSwap(NOTIONAL_AMOUNT, FIXED_RATE, TENOR, address(asset));
+
+        // ** ACCEPT SWAP ** //
+        vm.prank(bob);
+        rateSwap.acceptSwap(swapCreatedId);
+
+        assertEq(rateSwap.nextSwapId(), swapCreatedId + 1);
+        assertEq(rateSwap.settlementTimes(swapCreatedId), block.timestamp + TENOR);
+        assertEq(asset.balanceOf(address(rateSwap)), NOTIONAL_AMOUNT * 2); // Alice's notional + Bob's notional
     }
 
     function setMintAndApprove(address user, address spender) internal {

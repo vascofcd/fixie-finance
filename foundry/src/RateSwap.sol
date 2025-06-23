@@ -3,46 +3,60 @@ pragma solidity ^0.8.13;
 
 import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AssetRateAdapter} from "./interfaces/AssetRateAdapter.sol";
 import {IRateSwap} from "./interfaces/IRateSwap.sol";
+import {ILendingPool} from "./interfaces/aave/ILendingPool.sol";
 
-contract RateSwap is IRateSwap, AutomationCompatible {
+contract RateSwap is IRateSwap, AssetRateAdapter, AutomationCompatible {
     uint256 public constant COLLATERAL_MULTIPLIER = 1_200_000; // 120% collateralization
     uint256 public constant SECONDS_PER_YEAR = 31536000;
     uint256 public constant PRECISION = 1_000_000;
+
+    ILendingPool public immutable LendingPool;
 
     mapping(uint256 => InterestRateSwap) public swaps;
     mapping(uint256 => uint256) public settlementTimes;
     uint256 public nextSwapId;
 
-    function createSwap(uint256 notional, uint256 fixedRate, uint256 term, address asset)
+    constructor(ILendingPool _lendingPool) {
+        nextSwapId = 1;
+        LendingPool = _lendingPool;
+    }
+
+    function createSwap(uint256 _notional, uint256 _fixedRate, uint256 _tenor, address _asset)
         external
         returns (uint256 swapId)
     {
+        // ** Validations ** //
+        //@todo Check benchmark rate for _asset
+
+        require(_notional > 0, "Notional must be positive");
+        require(_fixedRate > 0, "Fixed rate must be positive");
+        require(_tenor > 0, "Tenor must be positive");
+
         swapId = nextSwapId++;
 
-        IERC20(asset).transferFrom(msg.sender, address(this), notional);
+        IERC20(_asset).transferFrom(msg.sender, address(this), _notional);
 
         swaps[swapId] = InterestRateSwap({
             fixedPayer: msg.sender,
             floatingPayer: address(0),
-            notional: notional,
-            fixedRate: fixedRate,
+            notional: _notional,
+            fixedRate: _fixedRate,
             startTimestamp: block.timestamp,
-            term: term,
-            asset: asset,
-            fixedCollateral: 0,
-            floatingCollateral: 0,
+            tenor: _tenor,
+            asset: _asset,
             status: RateSwapStatus.OPEN
         });
 
-        settlementTimes[swapId] = block.timestamp + term;
+        settlementTimes[swapId] = block.timestamp + _tenor;
 
-        emit SwapCreated(swapId, msg.sender, notional);
+        emit SwapCreated(swapId, _notional, msg.sender);
     }
 
-    ///@dev Anyone can accept an OPEN swap
     function acceptSwap(uint256 swapId) external {
         InterestRateSwap storage swap = swaps[swapId];
+
         require(swap.status == RateSwapStatus.OPEN, "Swap not open");
         require(swap.floatingPayer == address(0), "Already accepted");
 
@@ -59,4 +73,11 @@ contract RateSwap is IRateSwap, AutomationCompatible {
     function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {}
 
     function performUpkeep(bytes calldata performData) external {}
+
+    // ** aave rates **//
+    function getAnnualizedSupplyRate(address underlying) external view override returns (uint256) {
+        ILendingPool.ReserveData memory data = LendingPool.getReserveData(underlying);
+
+        return uint256(data.currentLiquidityRate) / 1e18;
+    }
 }
