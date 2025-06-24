@@ -3,24 +3,19 @@ pragma solidity ^0.8.13;
 
 import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {AssetRateAdapter} from "./interfaces/AssetRateAdapter.sol";
 import {IRateSwap} from "./interfaces/IRateSwap.sol";
-import {ILendingPool} from "./interfaces/aave/ILendingPool.sol";
 
-contract RateSwap is IRateSwap, AssetRateAdapter, AutomationCompatible {
+contract RateSwap is IRateSwap, AutomationCompatible {
     uint256 public constant COLLATERAL_MULTIPLIER = 1_200_000; // 120% collateralization
     uint256 public constant SECONDS_PER_YEAR = 31536000;
     uint256 public constant PRECISION = 1_000_000;
-
-    ILendingPool public immutable LendingPool;
 
     mapping(uint256 => InterestRateSwap) public swaps;
     mapping(uint256 => uint256) public settlementTimes;
     uint256 public nextSwapId;
 
-    constructor(ILendingPool _lendingPool) {
+    constructor() {
         nextSwapId = 1;
-        LendingPool = _lendingPool;
     }
 
     function createSwap(uint256 _notional, uint256 _fixedRate, uint256 _tenor, address _asset)
@@ -74,10 +69,7 @@ contract RateSwap is IRateSwap, AssetRateAdapter, AutomationCompatible {
 
     function performUpkeep(bytes calldata performData) external {}
 
-    // ** aave rates **//
-    function getAnnualizedSupplyRate(address underlying) external view override returns (uint256) {
-        ILendingPool.ReserveData memory data = LendingPool.getReserveData(underlying);
-
-        return uint256(data.currentLiquidityRate) / 1e18;
+    function getAnnualizedSupplyRate() external pure returns (uint256) {
+        return 1e18;
     }
 }
