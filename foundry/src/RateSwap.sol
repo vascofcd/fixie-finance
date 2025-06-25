@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRateSwap} from "./interfaces/IRateSwap.sol";
+// import {RateOracle} from "./oracles/RateOracle.sol";
 
 contract RateSwap is IRateSwap, AutomationCompatible {
     uint256 public constant COLLATERAL_MULTIPLIER = 1_200_000; // 120% collateralization
@@ -63,7 +64,10 @@ contract RateSwap is IRateSwap, AutomationCompatible {
         emit SwapAccepted(swapId, msg.sender);
     }
 
-    function settleSwap(uint256 swapId) external {}
+    function settleSwap(uint256 swapId) public view returns (uint256) {
+        // RateOracle oracle = RateOracle(address(0x1));
+        // return oracle.calculateRateFromTo(swaps[swapId].startTimestamp, block.timestamp);
+    }
 
     function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {}
 

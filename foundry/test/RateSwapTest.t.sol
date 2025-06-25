@@ -4,10 +4,12 @@ pragma solidity ^0.8.13;
 import {Test, console} from "forge-std/Test.sol";
 import {RateSwap} from "../src/RateSwap.sol";
 import {ERC20Mock} from "./mocks/ERC20Mock.sol";
+import {MockOracle} from "./mocks/MockOracle.sol";
 
 contract RateSwapTest is Test {
     RateSwap public rateSwap;
     ERC20Mock public asset;
+    MockOracle public oracle;
 
     address public alice = address(0x1);
     address public bob = address(0x2);
@@ -19,6 +21,7 @@ contract RateSwapTest is Test {
     function setUp() public {
         rateSwap = new RateSwap();
         asset = new ERC20Mock("Thether", "USDT");
+        oracle = new MockOracle(asset, 3600);
 
         setMintAndApprove(alice, address(rateSwap));
         setMintAndApprove(bob, address(rateSwap));
@@ -32,6 +35,8 @@ contract RateSwapTest is Test {
         // ** ACCEPT SWAP ** //
         vm.prank(bob);
         rateSwap.acceptSwap(swapCreatedId);
+
+        console.log("settlementTimes: %s", rateSwap.settleSwap(swapCreatedId));
 
         assertEq(rateSwap.nextSwapId(), swapCreatedId + 1);
         assertEq(rateSwap.settlementTimes(swapCreatedId), block.timestamp + TENOR);
