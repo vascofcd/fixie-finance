@@ -1,21 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRateSwap} from "./interfaces/IRateSwap.sol";
 // import {RateOracle} from "./oracles/RateOracle.sol";
 
-contract RateSwap is IRateSwap, AutomationCompatible {
-    uint256 public constant COLLATERAL_MULTIPLIER = 1_200_000; // 120% collateralization
-    uint256 public constant SECONDS_PER_YEAR = 31536000;
-    uint256 public constant PRECISION = 1_000_000;
+contract RateSwap is IRateSwap {
+    address public pool;
+    uint256 public nextSwapId;
 
     mapping(uint256 => InterestRateSwap) public swaps;
     mapping(uint256 => uint256) public settlementTimes;
-    uint256 public nextSwapId;
 
-    constructor() {
+    constructor(address _pool) {
+        pool = _pool;
         nextSwapId = 1;
     }
 
@@ -23,9 +21,6 @@ contract RateSwap is IRateSwap, AutomationCompatible {
         external
         returns (uint256 swapId)
     {
-        // ** Validations ** //
-        //@todo Check benchmark rate for _asset
-
         require(_notional > 0, "Notional must be positive");
         require(_fixedRate > 0, "Fixed rate must be positive");
         require(_tenor > 0, "Tenor must be positive");
@@ -67,13 +62,5 @@ contract RateSwap is IRateSwap, AutomationCompatible {
     function settleSwap(uint256 swapId) public view returns (uint256) {
         // RateOracle oracle = RateOracle(address(0x1));
         // return oracle.calculateRateFromTo(swaps[swapId].startTimestamp, block.timestamp);
-    }
-
-    function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {}
-
-    function performUpkeep(bytes calldata performData) external {}
-
-    function getAnnualizedSupplyRate() external pure returns (uint256) {
-        return 1e18;
     }
 }
