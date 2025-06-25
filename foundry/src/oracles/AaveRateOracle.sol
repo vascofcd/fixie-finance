@@ -1,31 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {IRateOracle} from "../interfaces/IRateOracle.sol";
+import {BaseRateOracle} from "../oracles/BaseRateOracle.sol";
 import {IAaveV3PoolAddressesProvider} from "../interfaces/aave/IAaveV3PoolAddressesProvider.sol";
 import {IAaveV3LendingPool} from "../interfaces/aave/IAaveV3LendingPool.sol";
 import {WadRayMath} from "../libraries/WadRayMath.sol";
 
-/**
- * @title Aave Reserve Income Oracle (Chainlink-compatible)
- *
- * @notice Publishes the current liquidity index for a single reserve so that
- *  other contracts can read it via `latestRoundData()` in the familiar
- *  Chainlink AggregatorV3 format
- *
- */
-contract AaveRateOracle is IRateOracle {
-    /* ─────────── immutable config ─────────── */
+contract AaveRateOracle is BaseRateOracle {
     IAaveV3PoolAddressesProvider public immutable provider;
-    address public immutable asset;
-
-    /* ─────────── snapshot struct ─────────── */
-    struct Observation {
-        uint40 ts; // timestamp of the snapshot   (fits until year 2106)
-        uint216 indexRay; // liquidity index at that ts  (27-decimals)
-    }
-
-    Observation public lastObs;
 
     /* ─────────── constructor ─────────── */
     constructor(address _provider, address _asset) {
@@ -50,7 +32,6 @@ contract AaveRateOracle is IRateOracle {
         return 1;
     }
 
-    /// @dev core Chainlink pull — returns *current* index down-scaled to 18 dec
     function latestRoundData()
         external
         view
@@ -76,29 +57,19 @@ contract AaveRateOracle is IRateOracle {
         );
     }
 
-    /* ─────────── Yield-specific helpers ─────────── */
-
-    ///@notice Records a new `{timestamp, index}` pair.
-    function update() external {
+    /* ─────────── Rate-specific helpers ─────────── */
+    function update() external override {
         uint256 idxRay = IAaveV3LendingPool(provider.getPool()).getReserveNormalizedIncome(asset);
         lastObs = Observation(uint40(block.timestamp), uint216(idxRay));
     }
 
-    /**
-     * @notice Realised yield (Ray precision) between the stored snapshot and now.
-     * @dev    *yieldRay* = (indexNow / indexSnapshot) − 1
-     */
-    function yieldSinceLast() external view returns (uint256 yieldRay) {
+    function rateSinceLast() external view override returns (uint256 yieldRay) {
         uint256 nowIdx = IAaveV3LendingPool(provider.getPool()).getReserveNormalizedIncome(asset);
         return WadRayMath.rayDiv(nowIdx, uint256(lastObs.indexRay)) - WadRayMath.RAY;
     }
 
-    /**
-     * @notice Same realised yield but returned as a human-readable percentage
-     *         with 1e4 precision (i.e. 1 % = 1_0000).
-     */
     function yieldPct1e4() external view returns (uint256 pct1e4) {
-        uint256 yRay = this.yieldSinceLast(); // 1e27
+        uint256 yRay = this.rateSinceLast(); // 1e27
         return (yRay * 10_000) / 1e27; // scale to basis-points
     }
 }
