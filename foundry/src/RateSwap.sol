@@ -3,17 +3,17 @@ pragma solidity ^0.8.13;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRateSwap} from "./interfaces/IRateSwap.sol";
-// import {RateOracle} from "./oracles/RateOracle.sol";
+import {AaveRateOracle} from "./oracles/AaveRateOracle.sol";
 
 contract RateSwap is IRateSwap {
-    address public pool;
+    address public oracleAddr;
     uint256 public nextSwapId;
 
     mapping(uint256 => InterestRateSwap) public swaps;
     mapping(uint256 => uint256) public settlementTimes;
 
-    constructor(address _pool) {
-        pool = _pool;
+    constructor(address _oracleAddr) {
+        oracleAddr = _oracleAddr;
         nextSwapId = 1;
     }
 
@@ -59,8 +59,11 @@ contract RateSwap is IRateSwap {
         emit SwapAccepted(swapId, msg.sender);
     }
 
-    function settleSwap(uint256 swapId) public view returns (uint256) {
-        // RateOracle oracle = RateOracle(address(0x1));
-        // return oracle.calculateRateFromTo(swaps[swapId].startTimestamp, block.timestamp);
+    //  IPool pool = IPool(pool_address);
+    //  IRateOracle oracle = IRateOracle(pool.oracle_address());
+    function settleSwap() public view returns (uint256) {
+        AaveRateOracle oracle = AaveRateOracle(oracleAddr);
+
+        return oracle.rateSinceLast();
     }
 }

@@ -65,7 +65,7 @@ contract AaveRateOracle is BaseRateOracle {
 
     function rateSinceLast() external view override returns (uint256 yieldRay) {
         uint256 nowIdx = IAaveV3LendingPool(provider.getPool()).getReserveNormalizedIncome(asset);
-        return WadRayMath.rayDiv(nowIdx, uint256(lastObs.indexRay)) - WadRayMath.RAY;
+        return WadRayMath.rayToWad(WadRayMath.rayDiv(nowIdx, uint256(lastObs.indexRay)) - WadRayMath.RAY);
     }
 
     function yieldPct1e4() external view returns (uint256 pct1e4) {

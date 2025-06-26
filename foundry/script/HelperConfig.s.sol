@@ -41,9 +41,13 @@ contract HelperConfig is Script {
     function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory anvilNetworkConfig) {
         vm.startBroadcast();
 
-        MockAaveV3LendingPool aavePool = new MockAaveV3LendingPool();
-        MockAaveV3PoolAddressesProvider aaveProvider = new MockAaveV3PoolAddressesProvider(address(aavePool));
         MockERC20 uscd = new MockERC20("USDC", "USDC");
+        MockAaveV3LendingPool aavePool = new MockAaveV3LendingPool();
+        aavePool.setReserveNormalizedIncome(
+            address(uscd),
+            1e27 // 1 USDC in Ray (1e27)
+        );
+        MockAaveV3PoolAddressesProvider aaveProvider = new MockAaveV3PoolAddressesProvider(address(aavePool));
 
         vm.stopBroadcast();
 
