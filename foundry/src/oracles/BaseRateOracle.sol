@@ -5,18 +5,14 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IAaveV3PoolAddressesProvider} from "../interfaces/aave/IAaveV3PoolAddressesProvider.sol";
 
 abstract contract BaseRateOracle {
-    /* ─────────── immutable config ─────────── */
-    address public immutable asset;
-
-    /* ─────────── snapshot struct ─────────── */
     struct Observation {
         uint40 ts; // timestamp of the snapshot   (fits until year 2106)
         uint216 indexRay; // liquidity index at that ts  (27-decimals)
     }
 
+    address public immutable asset;
     Observation public lastObs;
 
-    /* ─────────── from chainlink contracts repo ─────────── */
     function decimals() external view virtual returns (uint8);
     function description() external view virtual returns (string memory);
     function version() external view virtual returns (uint256);
@@ -26,7 +22,6 @@ abstract contract BaseRateOracle {
         virtual
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 
-    /* ─────────── Rate-specific  ─────────── */
     function update() external virtual;
     function rateSinceLast() external view virtual returns (uint256 yieldRay);
 }

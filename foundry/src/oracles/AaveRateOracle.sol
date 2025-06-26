@@ -9,17 +9,14 @@ import {WadRayMath} from "../libraries/WadRayMath.sol";
 contract AaveRateOracle is BaseRateOracle {
     IAaveV3PoolAddressesProvider public immutable provider;
 
-    /* ─────────── constructor ─────────── */
     constructor(address _provider, address _asset) {
         provider = IAaveV3PoolAddressesProvider(_provider);
         asset = _asset;
 
-        // seed the first observation
         uint256 startIdx = IAaveV3LendingPool(provider.getPool()).getReserveNormalizedIncome(_asset);
         lastObs = Observation(uint40(block.timestamp), uint216(startIdx));
     }
 
-    /* ─────────── chainlink feed section ─────────── */
     function decimals() public pure override returns (uint8) {
         return 18;
     }
@@ -57,7 +54,6 @@ contract AaveRateOracle is BaseRateOracle {
         );
     }
 
-    /* ─────────── Rate-specific helpers ─────────── */
     function update() external override {
         uint256 idxRay = IAaveV3LendingPool(provider.getPool()).getReserveNormalizedIncome(asset);
         lastObs = Observation(uint40(block.timestamp), uint216(idxRay));
@@ -69,7 +65,7 @@ contract AaveRateOracle is BaseRateOracle {
     }
 
     function yieldPct1e4() external view returns (uint256 pct1e4) {
-        uint256 yRay = this.rateSinceLast(); // 1e27
+        uint256 yRay = this.rateSinceLast();
         return (yRay * 10_000) / 1e27; // scale to basis-points
     }
 }

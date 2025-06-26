@@ -13,12 +13,6 @@ interface IRateSwap {
         RateSwapStatus status;
     }
 
-    ///@dev Rate record for floating rates
-    struct RateRecord {
-        uint256 timestamp;
-        uint256 rateBps;
-    }
-
     enum RateSwapStatus {
         OPEN,
         ACTIVE,

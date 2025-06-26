@@ -8,7 +8,6 @@ import {AaveRateOracle} from "./oracles/AaveRateOracle.sol";
 contract RateSwap is IRateSwap {
     address public oracleAddr;
     uint256 public nextSwapId;
-
     mapping(uint256 => InterestRateSwap) public swaps;
     mapping(uint256 => uint256) public settlementTimes;
 
@@ -59,8 +58,6 @@ contract RateSwap is IRateSwap {
         emit SwapAccepted(swapId, msg.sender);
     }
 
-    //  IPool pool = IPool(pool_address);
-    //  IRateOracle oracle = IRateOracle(pool.oracle_address());
     function settleSwap() public view returns (uint256) {
         AaveRateOracle oracle = AaveRateOracle(oracleAddr);
 
