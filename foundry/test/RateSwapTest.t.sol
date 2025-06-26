@@ -29,10 +29,7 @@ contract RateSwapTest is Test {
         aavePool = new MockAaveV3LendingPool();
         aaveProvider = new MockAaveV3PoolAddressesProvider(address(aavePool));
 
-        aavePool.setReserveNormalizedIncome(
-            address(asset),
-            RAY // 1 USDC in Ray (1e27)
-        );
+        aavePool.setReserveNormalizedIncome(address(asset), RAY);
 
         aaveRateOracle = new AaveRateOracle(address(aaveProvider), address(asset));
         rateSwap = new RateSwap(address(aaveRateOracle));
@@ -46,33 +43,22 @@ contract RateSwapTest is Test {
 
         aavePool.setReserveNormalizedIncome(address(asset), (RAY * 103) / 100); // 1.03
         uint256 y = aaveRateOracle.rateSinceLast(); // 0.03 * RAY
-        uint256 x = aaveRateOracle.yieldPct1e4(); // 0.03 * RAY
-
-        console.log("y", y);
-        console.log("x", x);
 
         assertEq(y, (RAY * 3) / 100); // 3 % in Ray units
-
-        // 30_000_000_000_000_000_000_000_000
-        //             30_000_000_000_000_000
     }
 
     function test_createSwap() public {
-        // ** CREATE SWAP ** //
+        /* ─────────── create swap ─────────── */
         vm.prank(alice);
         uint256 swapCreatedId = rateSwap.createSwap(NOTIONAL_AMOUNT, FIXED_RATE, TENOR, address(asset));
 
-        // ** ACCEPT SWAP ** //
+        /* ─────────── accept swap ─────────── */
         vm.prank(bob);
         rateSwap.acceptSwap(swapCreatedId);
 
-        // ** SETTLE SWAP ** //
-        console.log("getReserveNormalizedIncome", aavePool.getReserveNormalizedIncome(address(asset)));
-        console.log("settleSwap: %s", rateSwap.settleSwap());
-
-        // assertEq(rateSwap.nextSwapId(), swapCreatedId + 1);
-        // assertEq(rateSwap.settlementTimes(swapCreatedId), block.timestamp + TENOR);
-        // assertEq(asset.balanceOf(address(rateSwap)), NOTIONAL_AMOUNT * 2); // Alice's notional + Bob's notional
+        assertEq(rateSwap.nextSwapId(), swapCreatedId + 1);
+        assertEq(rateSwap.settlementTimes(swapCreatedId), block.timestamp + TENOR);
+        assertEq(asset.balanceOf(address(rateSwap)), NOTIONAL_AMOUNT * 2); // Alice's notional + Bob's notional
     }
 
     function setMintAndApprove(address user, address spender) internal {
