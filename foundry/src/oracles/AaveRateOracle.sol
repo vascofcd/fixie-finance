@@ -9,6 +9,9 @@ import {WadRayMath} from "../libraries/WadRayMath.sol";
 contract AaveRateOracle is BaseRateOracle {
     IAaveV3PoolAddressesProvider public immutable provider;
 
+    uint256 constant RAY = 1e27;
+    uint256 constant PRECISION = 10_000;
+
     constructor(address _provider, address _asset) {
         provider = IAaveV3PoolAddressesProvider(_provider);
         asset = _asset;
@@ -44,14 +47,8 @@ contract AaveRateOracle is BaseRateOracle {
         // 3. Convert 27-dec → 18-dec so consumers don’t need bespoke math
         uint256 index18 = indexRay / 1e9;
 
-        // 4. Return in Chainlink schema (we ignore round IDs for a pure on-chain feed)
-        return (
-            0, // roundId (static)
-            int256(index18), // answer
-            block.timestamp, // startedAt
-            block.timestamp, // updatedAt
-            0 // answeredInRound
-        );
+        // 4. Return in Chainlink schema
+        return (0, int256(index18), block.timestamp, block.timestamp, 0);
     }
 
     function update() external override {
@@ -66,6 +63,6 @@ contract AaveRateOracle is BaseRateOracle {
 
     function yieldPct1e4() external view returns (uint256 pct1e4) {
         uint256 yRay = this.rateSinceLast();
-        return (yRay * 10_000) / 1e27; // scale to basis-points
+        return (yRay * PRECISION) / RAY;
     }
 }

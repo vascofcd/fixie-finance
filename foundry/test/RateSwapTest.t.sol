@@ -18,10 +18,9 @@ contract RateSwapTest is Test {
     address public alice = address(0x1);
     address public bob = address(0x2);
 
-    uint256 public constant NOTIONAL_AMOUNT = 1e17;
-    uint256 public constant FIXED_RATE = 50000; // 5%
-    uint256 public constant TENOR = 180 days;
-
+    uint256 public constant NOTIONAL_AMOUNT = 1e18;
+    uint256 public constant FIXED_RATE = 1_000; // 5% in basis points (1e8 scale)
+    uint256 public constant TENOR = 365 days;
     uint256 constant RAY = 1e27;
 
     function setUp() public {
@@ -39,26 +38,34 @@ contract RateSwapTest is Test {
     }
 
     function test_aaveRate() public {
-        aaveRateOracle.update(); // snapshot 1
+        // 105_00000_00000_00000_00000_00000 (i.e., 1.05 * 1e27)
+        // This means your aToken has accrued 5% interest since it was minted.
+        aaveRateOracle.update();
 
-        aavePool.setReserveNormalizedIncome(address(asset), (RAY * 103) / 100); // 1.03
-        uint256 y = aaveRateOracle.rateSinceLast(); // 0.03 * RAY
+        aavePool.setReserveNormalizedIncome(address(asset), (RAY * 105) / 100); // 1.05 or 5%
+        uint256 y = aaveRateOracle.rateSinceLast(); // 5_00000_00000_00000_00000_00000 or  0.05 * RAY
 
-        assertEq(y, (RAY * 3) / 100); // 3 % in Ray units
+        assertEq(y, (RAY * 5) / 100); // 5 % in Ray units
     }
 
     function test_createSwap() public {
-        /* ─────────── create swap ─────────── */
+        /* ───────────────────────────────── create swap ───────────────────────────────── */
         vm.prank(alice);
         uint256 swapCreatedId = rateSwap.createSwap(NOTIONAL_AMOUNT, FIXED_RATE, TENOR, address(asset));
 
-        /* ─────────── accept swap ─────────── */
+        /* ──────────────────────────────── update oracle ──────────────────────────────── */
+        aaveRateOracle.update();
+        aavePool.setReserveNormalizedIncome(address(asset), (RAY * 105) / 100); // 1.05
+
+        /* ───────────────────────────────── accept swap ───────────────────────────────── */
         vm.prank(bob);
         rateSwap.acceptSwap(swapCreatedId);
 
+        console.log("payment %s ", rateSwap.settleSwap(swapCreatedId));
+
         assertEq(rateSwap.nextSwapId(), swapCreatedId + 1);
         assertEq(rateSwap.settlementTimes(swapCreatedId), block.timestamp + TENOR);
-        assertEq(asset.balanceOf(address(rateSwap)), NOTIONAL_AMOUNT * 2); // Alice's notional + Bob's notional
+        assertEq(asset.balanceOf(address(rateSwap)), NOTIONAL_AMOUNT * 2);
     }
 
     function setMintAndApprove(address user, address spender) internal {

@@ -11,6 +11,8 @@ contract RateSwap is IRateSwap {
     mapping(uint256 => InterestRateSwap) public swaps;
     mapping(uint256 => uint256) public settlementTimes;
 
+    uint256 public constant YEAR_SECONDS = 365 days;
+
     constructor(address _oracleAddr) {
         oracleAddr = _oracleAddr;
         nextSwapId = 1;
@@ -58,9 +60,25 @@ contract RateSwap is IRateSwap {
         emit SwapAccepted(swapId, msg.sender);
     }
 
-    function settleSwap() public view returns (uint256) {
-        AaveRateOracle oracle = AaveRateOracle(oracleAddr);
+    function settleSwap(uint256 swapId) public view returns (int256) {
+        return _calculateNetPayment(swapId);
+    }
 
-        return oracle.rateSinceLast();
+    function _calculateNetPayment(uint256 swapId) private view returns (int256 netPayment) {
+        AaveRateOracle oracle = AaveRateOracle(oracleAddr);
+        InterestRateSwap storage swap = swaps[swapId];
+
+        // 5_00000_00000_00000_00000_00000
+        uint256 floatingRate = oracle.rateSinceLast() * 10_000 / 1e27;
+
+        // 5000_00000_00000
+        uint256 fixedPayment = (swap.fixedRate * swap.notional * swap.tenor) / (10_000 * YEAR_SECONDS);
+
+        // 50000_00000_00000_00000_00000_00000_00000
+        uint256 floatingPayment = (floatingRate * swap.notional * swap.tenor) / (10_000 * YEAR_SECONDS);
+
+        netPayment = int256(fixedPayment) - int256(floatingPayment);
+
+        return netPayment;
     }
 }
