@@ -2,6 +2,27 @@
 pragma solidity ^0.8.13;
 
 interface IRateSwap {
+    /// @param notional     Scaled by leverage
+    /// @param collateral   Margin on deposit
+    /// @param leverage     1 – maxLeverage inclusive.
+    /// @param fixedRate    Trader‑agreed annual fixed rate (WAD)
+    /// @param start        Unix ts when opened
+    /// @param maturity     Unix ts for settlement
+    /// @param payFixed     Pay fixed / receive floating? (true) otherwise the converse.
+    /// @param settled      Flag to block re‑entrance.
+    /// @param owner        Position owner
+    struct Position {
+        uint256 notional;
+        uint256 collateral;
+        uint256 leverage;
+        uint256 fixedRate;
+        uint256 start;
+        uint256 maturity;
+        bool payFixed;
+        bool settled;
+        address trader;
+    }
+
     struct InterestRateSwap {
         address fixedPayer;
         address floatingPayer; // Set when accepted

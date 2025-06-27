@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {BaseRateOracle} from "../oracles/BaseRateOracle.sol";
 import {IAaveV3PoolAddressesProvider} from "../interfaces/aave/IAaveV3PoolAddressesProvider.sol";
 import {IAaveV3LendingPool} from "../interfaces/aave/IAaveV3LendingPool.sol";
@@ -12,7 +13,7 @@ contract AaveRateOracle is BaseRateOracle {
     uint256 constant RAY = 1e27;
     uint256 constant PRECISION = 10_000;
 
-    constructor(address _provider, address _asset) {
+    constructor(address _provider, address _asset) Ownable(msg.sender) {
         provider = IAaveV3PoolAddressesProvider(_provider);
         asset = _asset;
 
