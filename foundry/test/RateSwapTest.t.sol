@@ -18,9 +18,6 @@ contract RateSwapTest is Test {
     address public alice = address(0x1);
     address public bob = address(0x2);
 
-    uint256 public constant NOTIONAL_AMOUNT = 1e18;
-    uint256 public constant FIXED_RATE = 1_000; // 5% in basis points (1e8 scale)
-    uint256 public constant TENOR = 365 days;
     uint256 constant RAY = 1e27;
 
     function setUp() public {
@@ -31,41 +28,73 @@ contract RateSwapTest is Test {
         aavePool.setReserveNormalizedIncome(address(asset), RAY);
 
         aaveRateOracle = new AaveRateOracle(address(aaveProvider), address(asset));
-        rateSwap = new RateSwap(address(aaveRateOracle));
+        rateSwap = new RateSwap(address(asset), address(aaveRateOracle));
 
         setMintAndApprove(alice, address(rateSwap));
         setMintAndApprove(bob, address(rateSwap));
+        setMintAndApprove(address(rateSwap), address(rateSwap));
     }
 
     function test_aaveRate() public {
-        // 105_00000_00000_00000_00000_00000 (i.e., 1.05 * 1e27)
-        // This means your aToken has accrued 5% interest since it was minted.
+        ///@dev 105_00000_00000_00000_00000_00000 (i.e., 1.05 * 1e27)
+        ///@dev This means your aToken has accrued 5% interest since it was minted
         aaveRateOracle.update();
 
-        aavePool.setReserveNormalizedIncome(address(asset), (RAY * 105) / 100); // 1.05 or 5%
-        uint256 y = aaveRateOracle.rateSinceLast(); // 5_00000_00000_00000_00000_00000 or  0.05 * RAY
+        ///@dev 1.05 or 5%
+        aavePool.setReserveNormalizedIncome(address(asset), (RAY * 105) / 100);
 
-        assertEq(y, (RAY * 5) / 100); // 5 % in Ray units
+        ///@dev 5_00000_00000_00000_00000_00000 or  0.05 * RAY
+        uint256 y = aaveRateOracle.rateSinceLast();
+
+        ///@dev 5 % in Ray units
+        assertEq(y, (RAY * 5) / 100);
     }
 
-    function test_createSwap() public {
-        /* ───────────────────────────────── create swap ───────────────────────────────── */
+    function test_openSwap() public {
+        // ---------------------------------------------------------------------
+        // Open swap
+        // ---------------------------------------------------------------------
+
+        bool isFixed = true;
+        uint256 collAmount = 1e18;
+        uint256 leverageX = 1;
+        uint256 fixedRate = 5_000; // 5% in basis points (1e8 scale)
+        uint256 tenorDays = 365 days;
+
         vm.prank(alice);
-        uint256 swapCreatedId = rateSwap.createSwap(NOTIONAL_AMOUNT, FIXED_RATE, TENOR, address(asset));
 
-        /* ──────────────────────────────── update oracle ──────────────────────────────── */
+        uint256 swapId = rateSwap.openSwap({
+            _payFixed: isFixed,
+            _collateralAmount: collAmount,
+            _leverageX: leverageX,
+            _fixedRateWad: fixedRate,
+            _tenorDays: tenorDays
+        });
+
+        (uint256 notional,, uint256 lev,, uint256 start, uint256 maturity, bool payFixed,, address owner) =
+            rateSwap.positions(swapId);
+
+        assertEq(notional, 1e18, "notional");
+        assertEq(lev, 1, "leverage");
+        assertGt(start, 0, "start ts");
+        assertEq(maturity, block.timestamp + tenorDays * 1 days, "maturity");
+        assertEq(payFixed, true, "direction");
+        assertEq(owner, alice, "owner");
+
+        // ---------------------------------------------------------------------
+        // Open swap
+        // ---------------------------------------------------------------------
+
+        // Trader pays fixed 5%, floating ends up at 10% → trader gains.
         aaveRateOracle.update();
-        aavePool.setReserveNormalizedIncome(address(asset), (RAY * 105) / 100); // 1.05
+        aavePool.setReserveNormalizedIncome(address(asset), (RAY * 110) / 100); // 1.10 or 10%
+        vm.warp(block.timestamp + tenorDays * 1 days);
 
-        /* ───────────────────────────────── accept swap ───────────────────────────────── */
-        vm.prank(bob);
-        rateSwap.acceptSwap(swapCreatedId);
+        uint256 before = asset.balanceOf(alice);
+        rateSwap.settleSwap(swapId);
+        uint256 afterBal = asset.balanceOf(alice);
 
-        console.log("payment %s ", rateSwap.settleSwap(swapCreatedId));
-
-        assertEq(rateSwap.nextSwapId(), swapCreatedId + 1);
-        assertEq(rateSwap.settlementTimes(swapCreatedId), block.timestamp + TENOR);
-        assertEq(asset.balanceOf(address(rateSwap)), NOTIONAL_AMOUNT * 2);
+        assertGt(afterBal, before, "trader should profit");
     }
 
     function setMintAndApprove(address user, address spender) internal {

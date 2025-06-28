@@ -43,7 +43,7 @@ contract RateSwap is IRateSwap, Ownable {
     uint256 public constant WAD = 1e18;
 
     ///@dev Simple day‑count convention
-    uint256 public constant DAYS_IN_YEAR = 365;
+    uint256 public constant YEAR_SECONDS = 365 days;
 
     // ---------------------------------------------------------------------
     // Governance‑controlled risk knobs
@@ -62,7 +62,6 @@ contract RateSwap is IRateSwap, Ownable {
         require(_asset != address(0) && _oracle != address(0), "zero addr");
         asset = IERC20(_asset);
         oracle = IRateOracle(_oracle);
-        nextId = 1;
     }
 
     function setMaxLeverage(uint256 _lev) external onlyOwner {
@@ -93,7 +92,7 @@ contract RateSwap is IRateSwap, Ownable {
         uint256 _leverageX,
         uint256 _fixedRateWad,
         uint256 _tenorDays
-    ) external {
+    ) external returns (uint256) {
         require(_leverageX >= 1 && _leverageX <= maxLeverage, "leverage");
         require(_collateralAmount > 0, "collateral 0");
         require(_tenorDays > 0, "tenor 0");
@@ -109,6 +108,7 @@ contract RateSwap is IRateSwap, Ownable {
 
         uint256 maturityTs = block.timestamp + _tenorDays * 1 days;
 
+        nextId++;
         positions[nextId] = Position({
             notional: notional,
             collateral: _collateralAmount,
@@ -122,7 +122,7 @@ contract RateSwap is IRateSwap, Ownable {
         });
 
         emit OpenSwap(nextId, msg.sender, _payFixed, notional, _leverageX, _collateralAmount, _fixedRateWad, maturityTs);
-        nextId++;
+        return nextId;
     }
 
     /**
@@ -147,7 +147,7 @@ contract RateSwap is IRateSwap, Ownable {
      *
      * @param id  Position ID to settle.
      */
-    function settle(uint256 id) public {
+    function settleSwap(uint256 id) public {
         Position storage p = positions[id];
         require(block.timestamp >= p.maturity, "not matured");
         require(!p.settled, "re-settl");
@@ -156,11 +156,11 @@ contract RateSwap is IRateSwap, Ownable {
         uint256 elapsedDays = (p.maturity - p.start) / 1 days;
 
         ///@dev WAD annualised
-        uint256 floatRate = oracle.rateSinceLast();
+        uint256 floatRate = oracle.rateSinceLast() * 100_000 / 1e27; //@todo
 
         ///@dev interestPayable = notional × rate × days / 365 / 1e18
-        uint256 fixedInt = (p.notional * p.fixedRate * elapsedDays) / DAYS_IN_YEAR / WAD;
-        uint256 floatInt = (p.notional * floatRate * elapsedDays) / DAYS_IN_YEAR / WAD;
+        uint256 fixedInt = (p.notional * p.fixedRate * elapsedDays) / (100_000 * YEAR_SECONDS);
+        uint256 floatInt = (p.notional * floatRate * elapsedDays) / (100_000 * YEAR_SECONDS);
 
         int256 pnl;
         if (p.payFixed) {
@@ -170,6 +170,23 @@ contract RateSwap is IRateSwap, Ownable {
             ///@dev Trader paid floating ⇒ profit = fixed − float.
             pnl = int256(fixedInt) - int256(floatInt);
         }
+
+        //  function _calculateNetPayment(uint256 swapId) private view returns (int256 netPayment) {
+        //         AaveRateOracle oracle = AaveRateOracle(oracleAddr);
+        //         InterestRateSwap storage swap = swaps[swapId];
+
+        //         // 5_00000_00000_00000_00000_00000
+        //         uint256 floatingRate = oracle.rateSinceLast() * 10_000 / 1e27;
+
+        //         // 5000_00000_00000
+        //         uint256 fixedPayment = (swap.fixedRate * swap.notional * swap.tenor) / (10_000 * YEAR_SECONDS);
+
+        //         // 50000_00000_00000_00000_00000_00000_00000
+        //         uint256 floatingPayment = (floatingRate * swap.notional * swap.tenor) / (10_000 * YEAR_SECONDS);
+
+        //         netPayment = int256(fixedPayment) - int256(floatingPayment);
+
+        //         return netPayment;
 
         int256 newBal = int256(p.collateral) + pnl;
         p.settled = true;

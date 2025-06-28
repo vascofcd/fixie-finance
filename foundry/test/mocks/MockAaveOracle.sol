@@ -9,7 +9,7 @@ import {WadRayMath} from "../../src/libraries/WadRayMath.sol";
 contract MockAaveOracle is BaseRateOracle {
     uint256 private _currentIndexRay;
 
-    constructor(uint256 initialIndexRay) {
+    constructor(uint256 initialIndexRay) Ownable(msg.sender) {
         _currentIndexRay = initialIndexRay;
         lastObs = Observation(uint40(block.timestamp), uint216(initialIndexRay));
     }
