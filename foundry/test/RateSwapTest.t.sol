@@ -22,10 +22,11 @@ contract RateSwapTest is Test {
 
     function setUp() public {
         asset = new MockERC20("USDC", "USDC");
-        aavePool = new MockAaveV3LendingPool();
-        aaveProvider = new MockAaveV3PoolAddressesProvider(address(aavePool));
 
+        aavePool = new MockAaveV3LendingPool();
         aavePool.setReserveNormalizedIncome(address(asset), RAY);
+
+        aaveProvider = new MockAaveV3PoolAddressesProvider(address(aavePool));
 
         aaveRateOracle = new AaveRateOracle(address(aaveProvider), address(asset));
         rateSwap = new RateSwap(address(asset), address(aaveRateOracle));
@@ -59,7 +60,7 @@ contract RateSwapTest is Test {
         uint256 collAmount = 1e18;
         uint256 leverageX = 1;
         uint256 fixedRate = 5_000; // 5% in basis points (1e8 scale)
-        uint256 tenorDays = 365 days;
+        uint256 tenorDays = 28 days;
 
         vm.prank(alice);
 

@@ -6,9 +6,6 @@ import {MockERC20} from "../test/mocks/MockERC20.sol";
 import {MockAaveV3LendingPool} from "../test/mocks/MockAaveV3LendingPool.sol";
 import {MockAaveV3PoolAddressesProvider} from "../test/mocks/MockAaveV3PoolAddressesProvider.sol";
 
-/// https://aave.com/docs/resources/addresses
-/// https://docs.chain.link/ccip/directory/testnet/token/USDC
-
 contract HelperConfig is Script {
     struct NetworkConfig {
         address aaveProvider;
@@ -33,7 +30,7 @@ contract HelperConfig is Script {
         sepoliaNetworkConfig = NetworkConfig({
             aaveProvider: 0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A,
             aavePool: 0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951,
-            aaveAsset: 0x854edF78e05Cd554CE538DA198Ce31807F2Cb7CF,
+            aaveAsset: 0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8,
             deployerKey: vm.envUint("PRIVATE_KEY")
         });
     }

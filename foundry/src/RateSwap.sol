@@ -80,6 +80,7 @@ contract RateSwap is IRateSwap, Ownable {
 
     /**
      * @notice Opens a leveraged rate swap.
+     *
      * @param _payFixed         true ⇒ trader pays fixed, receives floating; false ⇒ trader pays floating.
      * @param _collateralAmount Margin the trader is willing to post (asset.decimals).
      * @param _leverageX        Leverage multiplier (integer up to maxLeverage).
@@ -104,6 +105,7 @@ contract RateSwap is IRateSwap, Ownable {
         require(_collateralAmount >= required, "margin too low");
 
         ///@notice Pull collateral
+        asset.approve(address(this), _collateralAmount);
         asset.transferFrom(msg.sender, address(this), _collateralAmount);
 
         uint256 maturityTs = block.timestamp + _tenorDays * 1 days;
@@ -170,23 +172,6 @@ contract RateSwap is IRateSwap, Ownable {
             ///@dev Trader paid floating ⇒ profit = fixed − float.
             pnl = int256(fixedInt) - int256(floatInt);
         }
-
-        //  function _calculateNetPayment(uint256 swapId) private view returns (int256 netPayment) {
-        //         AaveRateOracle oracle = AaveRateOracle(oracleAddr);
-        //         InterestRateSwap storage swap = swaps[swapId];
-
-        //         // 5_00000_00000_00000_00000_00000
-        //         uint256 floatingRate = oracle.rateSinceLast() * 10_000 / 1e27;
-
-        //         // 5000_00000_00000
-        //         uint256 fixedPayment = (swap.fixedRate * swap.notional * swap.tenor) / (10_000 * YEAR_SECONDS);
-
-        //         // 50000_00000_00000_00000_00000_00000_00000
-        //         uint256 floatingPayment = (floatingRate * swap.notional * swap.tenor) / (10_000 * YEAR_SECONDS);
-
-        //         netPayment = int256(fixedPayment) - int256(floatingPayment);
-
-        //         return netPayment;
 
         int256 newBal = int256(p.collateral) + pnl;
         p.settled = true;

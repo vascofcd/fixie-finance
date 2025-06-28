@@ -11,13 +11,13 @@ contract DeployFixie is Script {
     RateSwap rateSwap;
 
     function run() public {
-        // HelperConfig helperConfig = new HelperConfig();
+        HelperConfig helperConfig = new HelperConfig();
 
-        // (address aaveProvider,, address aaveAsset, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+        (address aaveProvider,, address aaveAsset, uint256 deployerKey) = helperConfig.activeNetworkConfig();
 
-        // vm.startBroadcast(deployerKey);
-        // aaveRateOracle = new AaveRateOracle(aaveProvider, aaveAsset);
-        // rateSwap = new RateSwap(address(aaveRateOracle));
-        // vm.stopBroadcast();
+        vm.startBroadcast(deployerKey);
+        aaveRateOracle = new AaveRateOracle(aaveProvider, aaveAsset);
+        rateSwap = new RateSwap(aaveAsset, address(aaveRateOracle));
+        vm.stopBroadcast();
     }
 }
