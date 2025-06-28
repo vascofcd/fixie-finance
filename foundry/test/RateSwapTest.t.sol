@@ -83,7 +83,7 @@ contract RateSwapTest is Test {
         assertEq(owner, alice, "owner");
 
         // ---------------------------------------------------------------------
-        // Open swap
+        // Settle swap
         // ---------------------------------------------------------------------
 
         // Trader pays fixed 5%, floating ends up at 10% → trader gains.

@@ -11,7 +11,6 @@ contract AaveRateOracle is BaseRateOracle {
     IAaveV3PoolAddressesProvider public immutable provider;
 
     uint256 constant RAY = 1e27;
-    uint256 constant PRECISION = 10_000;
 
     constructor(address _provider, address _asset) Ownable(msg.sender) {
         provider = IAaveV3PoolAddressesProvider(_provider);

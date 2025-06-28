@@ -11,6 +11,7 @@ contract HelperConfig is Script {
         address aaveProvider;
         address aavePool;
         address aaveAsset;
+        address functionsRouter;
         uint256 deployerKey;
     }
 
@@ -31,6 +32,7 @@ contract HelperConfig is Script {
             aaveProvider: 0x012bAC54348C0E635dCAc9D5FB99f06F24136C9A,
             aavePool: 0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951,
             aaveAsset: 0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8,
+            functionsRouter: 0xb83E47C2bC239B3bf370bc41e1459A34b41238D0,
             deployerKey: vm.envUint("PRIVATE_KEY")
         });
     }
@@ -52,6 +54,7 @@ contract HelperConfig is Script {
             aaveProvider: address(aaveProvider),
             aavePool: address(aavePool),
             aaveAsset: address(uscd),
+            functionsRouter: address(0), // // No functions router in anvil
             deployerKey: DEFAULT_ANVIL_PRIVATE_KEY
         });
     }

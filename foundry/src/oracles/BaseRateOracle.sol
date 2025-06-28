@@ -16,4 +16,6 @@ abstract contract BaseRateOracle is IRateOracle, Ownable {
 
     address public immutable asset;
     Observation public lastObs;
+
+    uint256 constant PRECISION = 10_000;
 }
