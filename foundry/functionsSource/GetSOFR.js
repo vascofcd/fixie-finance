@@ -1,26 +1,27 @@
-const tenor = args[0];
+async function main() {
+  const tenor = args[0];
 
-// ref: https://markets.newyorkfed.org/static/docs/markets-api.html#/
-const codingRequest = Functions.makeHttpRequest({
-  url: `https://markets.newyorkfed.org/api/rates/secured/sofr/last/${tenor}.json`,
-  method: "GET",
-});
+  let scaled = await getSOFRRate(tenor);
 
-const response = await codingRequest;
+  return Functions.encodeUint256(scaled);
+}
 
-console.log("Response:", response);
+async function getSOFRRate(tenor) {
+  const request = Functions.makeHttpRequest({
+    url: `https://markets.newyorkfed.org/api/rates/secured/sofr/last/${tenor}.json`,
+  });
 
-if (!Array.isArray(data?.refRates) || data.refRates.length === 0)
-  throw Error("No SOFR data returned for the requested tenor");
+  const [response] = await Promise.all([request]);
+  if (response.status !== 200) {
+    return null;
+  }
+  const avgSOFR =
+    response.data.refRates.reduce((sum, r) => sum + r.percentRate, 0) /
+    response.data.refRates.length;
 
-if (response.error)
-  throw Error("Request failed, try checking the params provided");
+  return Math.round(avgSOFR * 1000);
+}
 
-const avgSOFR =
-  response.data.refRates.reduce((sum, r) => sum + r.percentRate, 0) /
-  response.data.refRates.length;
+const result = await main();
 
-const scaled = avgSOFR * 1000; // e.g. 4.3533 % → 43533
-
-console.log("Scaled SOFR:", scaled);
-return Functions.encodeUint256(scaled);
+return result;

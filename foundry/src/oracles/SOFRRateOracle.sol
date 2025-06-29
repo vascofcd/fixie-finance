@@ -21,10 +21,7 @@ contract SOFRRateOracle is BaseRateOracle, FunctionsClient {
     }
 
     bytes32 public s_lastRequestId;
-    bytes32 public s_lastResponse;
-    bytes32 public s_lastError;
-    uint32 public s_lastResponseLength;
-    uint32 public s_lastErrorLength;
+    uint256 public s_lastResponse;
 
     FunctionsConfig public s_functionsConfig;
 
@@ -47,20 +44,9 @@ contract SOFRRateOracle is BaseRateOracle, FunctionsClient {
         return 1;
     }
 
-    function latestRoundData()
-        external
-        view
-        override
-        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
-    {}
-
     function update() external override {
         ///@dev 1 because it fetches the latest SOFR rate
         _sendFunctionsSOFRRateFetchRequest(1);
-    }
-
-    function rateSinceLast() external view override returns (uint256 yieldRay) {
-        return uint256(s_lastResponse);
     }
 
     function _sendFunctionsSOFRRateFetchRequest(uint256 _tenor) internal returns (bytes32 _reqId) {
@@ -76,26 +62,9 @@ contract SOFRRateOracle is BaseRateOracle, FunctionsClient {
             _sendRequest(req.encodeCBOR(), s_functionsConfig.subId, s_functionsConfig.gasLimit, s_functionsConfig.donId);
     }
 
-    function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
-        if (s_lastRequestId != requestId) {
-            revert UnexpectedRequestID(requestId);
-        }
-
-        s_lastResponse = bytesToBytes32(response);
-        s_lastResponseLength = uint32(response.length);
-        s_lastError = bytesToBytes32(err);
-        s_lastErrorLength = uint32(err.length);
-    }
-
-    function bytesToBytes32(bytes memory b) private pure returns (bytes32 out) {
-        uint256 maxLen = 32;
-        if (b.length < 32) {
-            maxLen = b.length;
-        }
-        for (uint256 i = 0; i < maxLen; ++i) {
-            out |= bytes32(b[i]) >> (i * 8);
-        }
-        return out;
+    function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory /* err */ ) internal override {
+        s_lastRequestId = requestId;
+        s_lastResponse = uint256(bytes32(response));
     }
 
     // ---------------------------------------------------------------------

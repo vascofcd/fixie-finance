@@ -24,8 +24,7 @@ contract DeployFixie is Script {
         SOFRRateOracle.FunctionsConfig memory config;
         config.source = vm.readFile("functionsSource/GetSOFR.js");
         config.subId = 5221;
-        config.gasLimit = 70_000;
-        ///@dev Hardcoded for Sepolia
+        config.gasLimit = 80_000;
         config.donId = "fun-ethereum-sepolia-1";
 
         sofrRateOracle = new SOFRRateOracle(address(functionsRouter), config);

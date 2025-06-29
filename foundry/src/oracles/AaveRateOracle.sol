@@ -10,6 +10,8 @@ import {WadRayMath} from "../libraries/WadRayMath.sol";
 contract AaveRateOracle is BaseRateOracle {
     IAaveV3PoolAddressesProvider public immutable provider;
 
+    uint256 public s_lastResponse;
+
     uint256 constant RAY = 1e27;
 
     constructor(address _provider, address _asset) Ownable(msg.sender) {
@@ -32,37 +34,8 @@ contract AaveRateOracle is BaseRateOracle {
         return 1;
     }
 
-    function latestRoundData()
-        external
-        view
-        override
-        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
-    {
-        // 1. Resolve the pool for this market
-        IAaveV3LendingPool pool = IAaveV3LendingPool(provider.getPool());
-
-        // 2. Pull the 27-dec index
-        uint256 indexRay = pool.getReserveNormalizedIncome(asset);
-
-        // 3. Convert 27-dec → 18-dec so consumers don’t need bespoke math
-        uint256 index18 = indexRay / 1e9;
-
-        // 4. Return in Chainlink schema
-        return (0, int256(index18), block.timestamp, block.timestamp, 0);
-    }
-
     function update() external override {
-        uint256 idxRay = IAaveV3LendingPool(provider.getPool()).getReserveNormalizedIncome(asset);
-        lastObs = Observation(uint40(block.timestamp), uint216(idxRay));
-    }
-
-    function rateSinceLast() external view override returns (uint256 yieldRay) {
         uint256 nowIdx = IAaveV3LendingPool(provider.getPool()).getReserveNormalizedIncome(asset);
-        return WadRayMath.rayDiv(nowIdx, uint256(lastObs.indexRay)) - WadRayMath.RAY;
-    }
-
-    function yieldPct1e4() external view returns (uint256 pct1e4) {
-        uint256 yRay = this.rateSinceLast();
-        return (yRay * PRECISION) / RAY;
+        s_lastResponse = WadRayMath.rayDiv(nowIdx, uint256(lastObs.indexRay)) - WadRayMath.RAY;
     }
 }

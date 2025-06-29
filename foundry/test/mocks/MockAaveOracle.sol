@@ -26,16 +26,6 @@ contract MockAaveOracle is BaseRateOracle {
         return 1;
     }
 
-    function latestRoundData()
-        external
-        view
-        override
-        returns (uint80, int256 answer, uint256 startedAt, uint256 updatedAt, uint80)
-    {
-        uint256 idx18 = _currentIndexRay / 1e9;
-        return (0, int256(idx18), block.timestamp, block.timestamp, 0);
-    }
-
     function setCurrentIndexRay(uint256 newIndexRay) external {
         _currentIndexRay = newIndexRay;
     }
@@ -46,10 +36,5 @@ contract MockAaveOracle is BaseRateOracle {
 
     function rateSinceLast() external view override returns (uint256 yieldRay) {
         return WadRayMath.rayDiv(_currentIndexRay, uint256(lastObs.indexRay)) - WadRayMath.RAY;
-    }
-
-    function yieldPct1e4() external view returns (uint256) {
-        uint256 yRay = this.rateSinceLast();
-        return (yRay * 10_000) / 1e27;
     }
 }
