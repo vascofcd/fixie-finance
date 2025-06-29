@@ -57,7 +57,7 @@ contract RateSwapTest is Test {
         // ---------------------------------------------------------------------
 
         bool isFixed = true;
-        uint256 collAmount = 1e18;
+        uint256 collAmount = 1e16;
         uint256 leverageX = 1;
         uint256 fixedRate = 5_000; // 5% in basis points (1e8 scale)
         uint256 tenorDays = 28 days;
@@ -75,7 +75,7 @@ contract RateSwapTest is Test {
         (uint256 notional,, uint256 lev,, uint256 start, uint256 maturity, bool payFixed,, address owner) =
             rateSwap.positions(swapId);
 
-        assertEq(notional, 1e18, "notional");
+        assertEq(notional, 1e16, "notional");
         assertEq(lev, 1, "leverage");
         assertGt(start, 0, "start ts");
         assertEq(maturity, block.timestamp + tenorDays * 1 days, "maturity");

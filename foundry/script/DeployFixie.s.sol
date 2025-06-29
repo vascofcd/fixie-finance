@@ -20,16 +20,35 @@ contract DeployFixie is Script {
 
         vm.startBroadcast(deployerKey);
         aaveRateOracle = new AaveRateOracle(aaveProvider, aaveAsset);
+        aaveRateOracle.update();
 
         SOFRRateOracle.FunctionsConfig memory config;
         config.source = vm.readFile("functionsSource/GetSOFR.js");
         config.subId = 5221;
-        config.gasLimit = 80_000;
+        config.gasLimit = 30_000;
         config.donId = "fun-ethereum-sepolia-1";
 
         sofrRateOracle = new SOFRRateOracle(address(functionsRouter), config);
+        sofrRateOracle.update();
 
         rateSwap = new RateSwap(aaveAsset, address(aaveRateOracle));
+
+        rateSwap.openSwap({
+            _payFixed: true,
+            _collateralAmount: 1e16,
+            _leverageX: 1,
+            _fixedRateWad: 5_000,
+            _tenorDays: 28 days
+        });
+
+        rateSwap.openSwap({
+            _payFixed: false,
+            _collateralAmount: 1e16,
+            _leverageX: 2,
+            _fixedRateWad: 4_000,
+            _tenorDays: 28 days
+        });
+
         vm.stopBroadcast();
     }
 }

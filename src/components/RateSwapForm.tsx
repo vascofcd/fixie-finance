@@ -38,7 +38,7 @@ const RateSwapForm = ({ currentFloatingRate }: SwapFormProps) => {
   });
 
   const rateSwapAddress =
-    (chainsToContracts[chainId]?.rateSwapAddress as `0x${string}`) || "0x";
+    (chainsToContracts[chainId]?.rateSwapContract as `0x${string}`) || "0x";
 
   const asset =
     (chainsToContracts[chainId]?.usdcAddress as `0x${string}`) || "0x";
