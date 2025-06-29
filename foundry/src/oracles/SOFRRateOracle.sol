@@ -49,6 +49,10 @@ contract SOFRRateOracle is BaseRateOracle, FunctionsClient {
         _sendFunctionsSOFRRateFetchRequest(1);
     }
 
+    function rateSinceLast() external view override returns (uint256) {
+        return s_lastResponse;
+    }
+
     function _sendFunctionsSOFRRateFetchRequest(uint256 _tenor) internal returns (bytes32 _reqId) {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(s_functionsConfig.source);

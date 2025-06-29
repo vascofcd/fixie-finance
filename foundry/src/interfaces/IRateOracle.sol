@@ -7,4 +7,5 @@ interface IRateOracle {
     function version() external view returns (uint256);
 
     function update() external;
+    function rateSinceLast() external view returns (uint256);
 }

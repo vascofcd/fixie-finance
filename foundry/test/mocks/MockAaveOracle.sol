@@ -34,7 +34,7 @@ contract MockAaveOracle is BaseRateOracle {
         lastObs = Observation(uint40(block.timestamp), uint216(_currentIndexRay));
     }
 
-    function rateSinceLast() external view override returns (uint256 yieldRay) {
+    function rateSinceLast() external view override returns (uint256) {
         return WadRayMath.rayDiv(_currentIndexRay, uint256(lastObs.indexRay)) - WadRayMath.RAY;
     }
 }
