@@ -12,7 +12,7 @@ export default function Home() {
       <main>
         <DashboardPage />
       </main>
-      <footer>This is a footer</footer>
+      <footer></footer>
     </div>
   );
 }

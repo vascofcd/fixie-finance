@@ -7,7 +7,7 @@ const DashboardPage = () => {
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Box sx={{ mt: 4 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-          <RateSwapForm walletConnected={false} />
+          <RateSwapForm />
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
           <Typography variant="h5">Your Swap Positions</Typography>

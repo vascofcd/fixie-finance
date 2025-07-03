@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 import {RateSwap} from "../src/RateSwap.sol";
 import {AaveRateOracle} from "../src/oracles/AaveRateOracle.sol";
@@ -20,7 +21,6 @@ contract DeployFixie is Script {
 
         vm.startBroadcast(deployerKey);
         aaveRateOracle = new AaveRateOracle(aaveProvider, aaveAsset);
-        aaveRateOracle.update();
 
         SOFRRateOracle.FunctionsConfig memory config;
         config.source = vm.readFile("functionsSource/GetSOFR.js");
@@ -29,25 +29,24 @@ contract DeployFixie is Script {
         config.donId = "fun-ethereum-sepolia-1";
 
         sofrRateOracle = new SOFRRateOracle(address(functionsRouter), config);
-        sofrRateOracle.update();
 
         rateSwap = new RateSwap(aaveAsset, address(aaveRateOracle));
 
-        rateSwap.openSwap({
-            _payFixed: true,
-            _collateralAmount: 1e16,
-            _leverageX: 1,
-            _fixedRateWad: 5_000,
-            _tenorDays: 28 days
-        });
+        // rateSwap.openSwap({
+        //     _payFixed: true,
+        //     _collateralAmount: 1e16,
+        //     _leverageX: 1,
+        //     _fixedRateWad: 5_000,
+        //     _tenorDays: 28 days
+        // });
 
-        rateSwap.openSwap({
-            _payFixed: false,
-            _collateralAmount: 1e16,
-            _leverageX: 2,
-            _fixedRateWad: 4_000,
-            _tenorDays: 28 days
-        });
+        // rateSwap.openSwap({
+        //     _payFixed: false,
+        //     _collateralAmount: 1e16,
+        //     _leverageX: 2,
+        //     _fixedRateWad: 4_000,
+        //     _tenorDays: 28 days
+        // });
 
         vm.stopBroadcast();
     }

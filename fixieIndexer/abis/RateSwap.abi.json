@@ -1,33 +1,145 @@
 [
   {
-    "type": "function",
-    "name": "createSwap",
+    "type": "constructor",
     "inputs": [
-      {
-        "name": "_counterparty",
-        "type": "address",
-        "internalType": "address"
-      },
-      { "name": "_notional", "type": "uint256", "internalType": "uint256" },
-      { "name": "_fixedRate", "type": "uint256", "internalType": "uint256" },
-      { "name": "_duration", "type": "uint256", "internalType": "uint256" }
+      { "name": "_asset", "type": "address", "internalType": "address" },
+      { "name": "_oracle", "type": "address", "internalType": "address" }
     ],
-    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "nextSwapId",
+    "name": "WAD",
     "inputs": [],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "recordFloatingRate",
+    "name": "YEAR_SECONDS",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "addCollateral",
     "inputs": [
-      { "name": "swapId", "type": "uint256", "internalType": "uint256" },
-      { "name": "rateBps", "type": "uint256", "internalType": "uint256" }
+      { "name": "id", "type": "uint256", "internalType": "uint256" },
+      { "name": "amount", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "asset",
+    "inputs": [],
+    "outputs": [
+      { "name": "", "type": "address", "internalType": "contract IERC20" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "maxLeverage",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "minCollateralRatio",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nextId",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "openSwap",
+    "inputs": [
+      { "name": "_payFixed", "type": "bool", "internalType": "bool" },
+      {
+        "name": "_collateralAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      { "name": "_leverageX", "type": "uint256", "internalType": "uint256" },
+      {
+        "name": "_fixedRateWad",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      { "name": "_tenorDays", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "oracle",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IRateOracle"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "positions",
+    "inputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [
+      { "name": "notional", "type": "uint256", "internalType": "uint256" },
+      { "name": "collateral", "type": "uint256", "internalType": "uint256" },
+      { "name": "leverage", "type": "uint256", "internalType": "uint256" },
+      { "name": "fixedRate", "type": "uint256", "internalType": "uint256" },
+      { "name": "start", "type": "uint256", "internalType": "uint256" },
+      { "name": "maturity", "type": "uint256", "internalType": "uint256" },
+      { "name": "payFixed", "type": "bool", "internalType": "bool" },
+      { "name": "settled", "type": "bool", "internalType": "bool" },
+      { "name": "trader", "type": "address", "internalType": "address" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "renounceOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMaxLeverage",
+    "inputs": [
+      { "name": "_lev", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMinCollateralRatio",
+    "inputs": [
+      { "name": "_bps", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -35,39 +147,37 @@
   {
     "type": "function",
     "name": "settleSwap",
-    "inputs": [
-      { "name": "swapId", "type": "uint256", "internalType": "uint256" }
-    ],
+    "inputs": [{ "name": "id", "type": "uint256", "internalType": "uint256" }],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "swaps",
-    "inputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "outputs": [
-      { "name": "fixedPayer", "type": "address", "internalType": "address" },
-      {
-        "name": "floatingPayer",
-        "type": "address",
-        "internalType": "address"
-      },
-      { "name": "notional", "type": "uint256", "internalType": "uint256" },
-      { "name": "fixedRate", "type": "uint256", "internalType": "uint256" },
-      {
-        "name": "startTimestamp",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "endTimestamp",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      { "name": "duration", "type": "uint256", "internalType": "uint256" },
-      { "name": "settled", "type": "bool", "internalType": "bool" }
+    "name": "transferOwnership",
+    "inputs": [
+      { "name": "newOwner", "type": "address", "internalType": "address" }
     ],
-    "stateMutability": "view"
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AddCollateral",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
   },
   {
     "type": "event",
@@ -96,6 +206,118 @@
   },
   {
     "type": "event",
+    "name": "OpenSwap",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "trader",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "payFixed",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      },
+      {
+        "name": "notional",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "leverage",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "collateral",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "fixedRate",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "maturity",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Settled",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "pnl",
+        "type": "int256",
+        "indexed": false,
+        "internalType": "int256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SwapAccepted",
+    "inputs": [
+      {
+        "name": "swapId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "floatingPayer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "SwapCreated",
     "inputs": [
       {
@@ -105,13 +327,13 @@
         "internalType": "uint256"
       },
       {
-        "name": "fixedPayer",
-        "type": "address",
+        "name": "notional",
+        "type": "uint256",
         "indexed": true,
-        "internalType": "address"
+        "internalType": "uint256"
       },
       {
-        "name": "floatingPayer",
+        "name": "fixedPayer",
         "type": "address",
         "indexed": true,
         "internalType": "address"
@@ -143,5 +365,19 @@
       }
     ],
     "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "OwnableInvalidOwner",
+    "inputs": [
+      { "name": "owner", "type": "address", "internalType": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableUnauthorizedAccount",
+    "inputs": [
+      { "name": "account", "type": "address", "internalType": "address" }
+    ]
   }
 ]

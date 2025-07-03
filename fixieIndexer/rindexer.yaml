@@ -4,6 +4,9 @@ networks:
   - name: anvil
     chain_id: 31337
     rpc: http://127.0.0.1:8545
+  - name: sepolia
+    chain_id: 11155111
+    rpc: https://eth-sepolia.g.alchemy.com/v2/xnyRB-XmWj_BhH2jwX3Rf
 storage:
   postgres:
     enabled: true
@@ -15,11 +18,11 @@ native_transfers:
 contracts:
   - name: RateSwap
     details:
-      - network: anvil
-        address: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+      - network: sepolia
+        address: 0xBBf1936923aD4E028F2ce2B942E094c35ccb3D0a
         start_block: "0"
     abi: ./abis/RateSwap.abi.json
     include_events:
-      - SwapCreated
-      - FloatingRateRecorded
-      - SwapSettled
+      - OpenSwap
+      - AddCollateral
+      - Settled
